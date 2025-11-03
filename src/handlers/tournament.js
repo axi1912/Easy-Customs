@@ -1,4 +1,4 @@
-import { 
+﻿import { 
   EmbedBuilder, 
   ButtonBuilder, 
   ActionRowBuilder, 
@@ -160,7 +160,7 @@ export async function handleTournamentSetup(interaction) {
       .setDescription('¡El registro está abierto! Únete con tu equipo.')
       .addFields(
         { name: '📊 Información', value: `**Equipos:** ${maxTeams}\n**Formato:** ${format}\n**Jugadores:** ${teamSize}`, inline: true },
-        { name: '📝 Cómo Registrarse', value: `Ve a ${registrationChannel} y usa el botón de registro`, inline: true }
+        { name: '📝 Cómo Registrarse', value: `Ve a ${registrationChannel} y usa el menú desplegable para seleccionar tu equipo`, inline: true }
       )
       .setColor(TOURNAMENT_COLORS.primary)
       .setTimestamp();
