@@ -105,21 +105,8 @@ export async function handleSubmitResultWithImageModal(interaction) {
 
     await interaction.editReply({ embeds: [embed] });
 
-    // Anuncio en el canal del equipo (donde se envió la imagen)
-    const publicEmbed = new DiscordEmbed()
-      .setTitle('✅ Resultados Registrados')
-      .setDescription(`**${teamName}** - Resultados confirmados`)
-      .setColor(TOURNAMENT_COLORS.success)
-      .addFields(
-        { name: '🏆 Posición', value: `#${position}`, inline: true },
-        { name: '💀 Kills', value: `${kills}`, inline: true },
-        { name: '📊 Puntos', value: `${finalScore.toFixed(1)}`, inline: true }
-      )
-      .setTimestamp();
-
-    await interaction.channel.send({ embeds: [publicEmbed] });
-
-    // Actualizar automáticamente la tabla de posiciones
+    // Anuncio COMPLETO en el canal del equipo para que admins puedan verificar
+    await interaction.channel.send({ embeds: [embed] });
     const bracketsChannel = interaction.guild.channels.cache.get(tournament.channels.brackets);
     if (bracketsChannel) {
       try {

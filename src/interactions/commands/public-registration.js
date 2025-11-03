@@ -245,6 +245,8 @@ async function createTeamInfrastructure(interaction, team) {
             PermissionFlagsBits.ViewChannel,
             PermissionFlagsBits.SendMessages,
             PermissionFlagsBits.ReadMessageHistory,
+            PermissionFlagsBits.AttachFiles,
+            PermissionFlagsBits.EmbedLinks,
             PermissionFlagsBits.Connect,
             PermissionFlagsBits.Speak
           ]
@@ -255,6 +257,8 @@ async function createTeamInfrastructure(interaction, team) {
             PermissionFlagsBits.ViewChannel,
             PermissionFlagsBits.SendMessages,
             PermissionFlagsBits.ReadMessageHistory,
+            PermissionFlagsBits.AttachFiles,
+            PermissionFlagsBits.EmbedLinks,
             PermissionFlagsBits.ManageChannels
           ]
         }
@@ -284,7 +288,9 @@ async function createTeamInfrastructure(interaction, team) {
           allow: [
             PermissionFlagsBits.ViewChannel,
             PermissionFlagsBits.SendMessages,
-            PermissionFlagsBits.ReadMessageHistory
+            PermissionFlagsBits.ReadMessageHistory,
+            PermissionFlagsBits.AttachFiles,
+            PermissionFlagsBits.EmbedLinks
           ]
         },
         {
@@ -292,7 +298,9 @@ async function createTeamInfrastructure(interaction, team) {
           allow: [
             PermissionFlagsBits.ViewChannel,
             PermissionFlagsBits.SendMessages,
-            PermissionFlagsBits.ReadMessageHistory
+            PermissionFlagsBits.ReadMessageHistory,
+            PermissionFlagsBits.AttachFiles,
+            PermissionFlagsBits.EmbedLinks
           ]
         }
       ]
@@ -316,7 +324,8 @@ async function createTeamInfrastructure(interaction, team) {
           allow: [
             PermissionFlagsBits.ViewChannel,
             PermissionFlagsBits.Connect,
-            PermissionFlagsBits.Speak
+            PermissionFlagsBits.Speak,
+            PermissionFlagsBits.UseVAD
           ]
         }
       ]
