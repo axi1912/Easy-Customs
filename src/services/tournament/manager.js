@@ -136,7 +136,17 @@ class TournamentManager {
   }
 
   getTeamCount() {
-    return this.registeredTeams.length;
+    // Contar equipos legacy + equipos con al menos un miembro en availableTeams
+    const legacyCount = this.registeredTeams.length;
+    
+    if (this.activeTournament && this.activeTournament.availableTeams) {
+      const activeAvailableTeams = this.activeTournament.availableTeams.filter(team => 
+        team.members.length > 0
+      ).length;
+      return legacyCount + activeAvailableTeams;
+    }
+    
+    return legacyCount;
   }
 
   // Búsquedas
@@ -155,30 +165,45 @@ class TournamentManager {
   }
 
   findTeamByChannelName(channelName) {
-    // Quitar solo el prefijo del tipo de canal (txt-, 📝-), NO quitar team- o equipo-
+    if (!this.activeTournament) {
+      console.log('❌ No hay torneo activo');
+      return null;
+    }
+
+    const teams = this.activeTournament.availableTeams || [];
+    
+    // Limpiar el nombre del canal - quitar prefijos y sufijos comunes
     let cleanChannelName = channelName
-      .replace(/^txt-/, '')      // Quitar txt-
-      .replace(/^📝-/, '');      // Quitar 📝-
-    
-    // Normalizar: minúsculas, espacios → guiones
-    let normalizedChannelName = cleanChannelName
       .toLowerCase()
-      .replace(/\s+/g, '-');
+      .replace(/^team/i, '')      // Quitar "team" del inicio (sin importar mayúsculas)
+      .replace(/^txt-?/, '')      // Quitar txt- o txt
+      .replace(/^📝-?/, '')       // Quitar 📝- o 📝
+      .replace(/-?chat$/i, '')    // Quitar -chat o chat del final
+      .replace(/-?vc$/i, '')      // Quitar -vc o vc del final
+      .replace(/^-/, '')          // Quitar guion inicial si quedó
+      .replace(/-$/, '')          // Quitar guion final si quedó
+      .replace(/\s+/g, '')        // Quitar espacios
+      .replace(/-/g, '');         // Quitar todos los guiones
     
-    console.log(`🔍 Buscando equipo para canal: "${channelName}" → limpio: "${cleanChannelName}" → normalizado: "${normalizedChannelName}"`);
+    console.log(`🔍 Buscando equipo para canal: "${channelName}" → normalizado: "${cleanChannelName}"`);
     
-    const found = this.registeredTeams.find(team => {
+    const found = teams.find(team => {
       // Normalizar el nombre del equipo de la misma forma
-      const normalizedTeamName = team.name.toLowerCase().replace(/\s+/g, '-');
-      console.log(`   Comparando con equipo: "${team.name}" → normalizado: "${normalizedTeamName}"`);
-      return normalizedTeamName === normalizedChannelName;
+      const normalizedTeamName = team.name
+        .toLowerCase()
+        .replace(/^team\s*/i, '')   // Quitar "team" o "TEAM" con espacios opcionales
+        .replace(/\s+/g, '')        // Quitar espacios
+        .replace(/-/g, '');         // Quitar guiones
+      
+      console.log(`   Comparando "${cleanChannelName}" con equipo: "${team.name}" → normalizado: "${normalizedTeamName}"`);
+      return normalizedTeamName === cleanChannelName;
     });
     
     if (found) {
       console.log(`✅ Equipo encontrado: ${found.name}`);
     } else {
-      console.log(`❌ No se encontró equipo para: ${normalizedChannelName}`);
-      console.log(`   Equipos registrados: ${this.registeredTeams.map(t => t.name).join(', ')}`);
+      console.log(`❌ No se encontró equipo para: ${cleanChannelName}`);
+      console.log(`   Equipos disponibles: ${teams.map(t => t.name).join(', ')}`);
     }
     
     return found;
@@ -189,7 +214,19 @@ class TournamentManager {
   }
 
   isUserRegistered(userId) {
-    return this.findTeamByMember(userId) !== undefined;
+    // Verificar tanto en equipos legacy como en availableTeams
+    const legacyRegistered = this.findTeamByMember(userId) !== undefined;
+    
+    if (legacyRegistered) return true;
+    
+    // Verificar en availableTeams del nuevo sistema
+    if (this.activeTournament && this.activeTournament.availableTeams) {
+      return this.activeTournament.availableTeams.some(team => 
+        team.members.some(member => member.userId === userId)
+      );
+    }
+    
+    return false;
   }
 
   // Validaciones

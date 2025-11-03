@@ -8,8 +8,13 @@ import { handleSubmitResultImageButton } from './submitResultImage.js';
 import { handlePanelSendLobbyCode } from './sendLobbyCodeButton.js';
 import { 
   handlePanelCreateTournament,
-  handlePanelHelp
+  handlePanelHelp,
+  handlePanelRegisterTeam
 } from '../../interactions/commands/panel.js';
+import { 
+  handleViewRegisteredTeams,
+  handleMyTeamInfo
+} from './public-registration-buttons.js';
 
 export const buttonHandlers = {
   'tournament_register_btn': handleTournamentRegisterButton,
@@ -19,9 +24,13 @@ export const buttonHandlers = {
   'panel_view_dashboard': handleTournamentDashboard,
   'panel_start_tournament': handleTournamentStart,
   'panel_view_teams': handlePanelViewTeams,
+  'panel_register_team': handlePanelRegisterTeam,
   'panel_reset_tournament': handleTournamentReset,
   'panel_send_lobby_code': handlePanelSendLobbyCode,
   'panel_help': handlePanelHelp,
+  // Public registration panel buttons
+  'view_registered_teams': handleViewRegisteredTeams,
+  'my_team_info': handleMyTeamInfo,
   // Dynamic handlers
   _dynamic: {
     submit_result: handleSubmitResultImageButton
@@ -42,7 +51,7 @@ async function handlePanelViewTeams(interaction) {
     }
     
     const tournament = tournamentManager.getActiveTournament();
-    const teams = tournamentManager.getRegisteredTeams();
+    const teams = tournament.availableTeams || [];
     
     const embed = new DiscordEmbed()
       .setTitle(`📋 Equipos Registrados - ${tournament.name}`)
@@ -55,9 +64,13 @@ async function handlePanelViewTeams(interaction) {
     
     if (teams.length > 0) {
       const teamList = teams.map((team, index) => {
-        const captain = team.captain ? `<@${team.captain.id}>` : 'N/A';
-        const members = team.members ? team.members.map(m => `<@${m.id}>`).join(', ') : 'N/A';
-        return `**${index + 1}.** ${team.name}\n👤 Capitán: ${captain}\n👥 Jugadores: ${members}`;
+        const tag = team.tag ? `[${team.tag}]` : '';
+        const memberCount = team.members ? team.members.length : 0;
+        const membersList = team.members && team.members.length > 0 
+          ? team.members.map(m => m.displayName).join(', ') 
+          : 'Sin miembros aún';
+        
+        return `**${index + 1}. ${team.name}** ${tag}\n👥 Miembros (${memberCount}/${tournament.teamSize}): ${membersList}`;
       }).join('\n\n');
       
       embed.addFields({ name: '👥 Equipos', value: teamList.slice(0, 1024) });

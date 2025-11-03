@@ -18,23 +18,26 @@ export async function handleTournamentPanel(interaction) {
     if (!PermissionService.hasAdminPermissions(interaction.member)) {
       return await interaction.reply({
         content: ERROR_MESSAGES.NO_PERMISSIONS,
-        ephemeral: true
+        flags: 64 // MessageFlags.Ephemeral
       });
     }
 
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: 64 }); // MessageFlags.Ephemeral
 
     const ADMIN_CATEGORY_ID = '1430649040827322389';
     
+    // Buscar el canal existente (por nombre, puede ser "panel-admin" o "-panel-admin")
     let panelChannel = interaction.guild.channels.cache.find(
-      ch => ch.name === '-panel-admin' && ch.parentId === ADMIN_CATEGORY_ID
+      ch => ch.name === 'panel-admin' || ch.name === '-panel-admin'
     );
     
+    // Si no existe, crear uno nuevo
     if (!panelChannel) {
+      console.log('📝 Creando nuevo canal panel-admin...');
       const { PermissionFlagsBits } = await import('discord.js');
       
       panelChannel = await interaction.guild.channels.create({
-        name: '-panel-admin',
+        name: 'panel-admin',
         type: 0,
         parent: ADMIN_CATEGORY_ID,
         permissionOverwrites: [
@@ -65,6 +68,8 @@ export async function handleTournamentPanel(interaction) {
           ReadMessageHistory: true
         });
       }
+    } else {
+      console.log(`✅ Usando canal panel-admin existente: ${panelChannel.id} (nombre: ${panelChannel.name})`);
     }
 
     const messages = await panelChannel.messages.fetch({ limit: 20 });
@@ -124,6 +129,15 @@ export async function handleTournamentPanel(interaction) {
           .setStyle(ButtonStyle.Secondary)
           .setDisabled(!hasActiveTournament),
         new ButtonBuilder()
+          .setCustomId('panel_register_team')
+          .setLabel(' Registrar Equipo')
+          .setStyle(ButtonStyle.Secondary)
+          .setDisabled(!hasActiveTournament)
+      );
+
+    const row3 = new ActionRowBuilder()
+      .addComponents(
+        new ButtonBuilder()
           .setCustomId('panel_send_lobby_code')
           .setLabel(' Enviar Lobby')
           .setStyle(ButtonStyle.Primary)
@@ -135,7 +149,7 @@ export async function handleTournamentPanel(interaction) {
           .setDisabled(!hasActiveTournament)
       );
 
-    const row3 = new ActionRowBuilder()
+    const row4 = new ActionRowBuilder()
       .addComponents(
         new ButtonBuilder()
           .setCustomId('panel_help')
@@ -146,7 +160,7 @@ export async function handleTournamentPanel(interaction) {
     if (existingPanel) {
       await existingPanel.edit({ 
         embeds: [embed], 
-        components: [row1, row2, row3]
+        components: [row1, row2, row3, row4]
       });
       
       await interaction.editReply({
@@ -155,7 +169,7 @@ export async function handleTournamentPanel(interaction) {
     } else {
       await panelChannel.send({ 
         embeds: [embed], 
-        components: [row1, row2, row3]
+        components: [row1, row2, row3, row4]
       });
 
       await interaction.editReply({
@@ -166,14 +180,21 @@ export async function handleTournamentPanel(interaction) {
   } catch (error) {
     console.error('Error en panel principal:', error);
     
-    const errorMsg = interaction.deferred || interaction.replied 
-      ? 'editReply' 
-      : 'reply';
-      
-    await interaction[errorMsg]({ 
-      content: ' Error al mostrar el panel de control', 
-      ephemeral: true 
-    }).catch(() => {});
+    // Solo responder si la interacción no ha expirado
+    if (error.code !== 10062) {
+      try {
+        const errorMsg = interaction.deferred || interaction.replied 
+          ? 'editReply' 
+          : 'reply';
+          
+        await interaction[errorMsg]({ 
+          content: ' Error al mostrar el panel de control', 
+          flags: 64 // MessageFlags.Ephemeral
+        });
+      } catch (err) {
+        console.error('Error al enviar mensaje de error:', err);
+      }
+    }
   }
 }
 
@@ -481,3 +502,36 @@ export async function updatePanelAutomatically(guild) {
     return false;
   }
 }
+
+// Nuevo handler para registrar equipos desde el panel
+export async function handlePanelRegisterTeam(interaction) {
+  const modal = new ModalBuilder()
+    .setCustomId('modal_panel_register_team')
+    .setTitle('📋 Registrar Equipo');
+
+  const teamNameInput = new TextInputBuilder()
+    .setCustomId('team_name')
+    .setLabel('Nombre del Equipo')
+    .setStyle(TextInputStyle.Short)
+    .setPlaceholder('Ej: Los Invencibles')
+    .setMinLength(3)
+    .setMaxLength(50)
+    .setRequired(true);
+
+  const teamTagInput = new TextInputBuilder()
+    .setCustomId('team_tag')
+    .setLabel('Tag del Equipo (Opcional)')
+    .setStyle(TextInputStyle.Short)
+    .setPlaceholder('Ej: INV')
+    .setMinLength(2)
+    .setMaxLength(5)
+    .setRequired(false);
+
+  const row1 = new ActionRowBuilder().addComponents(teamNameInput);
+  const row2 = new ActionRowBuilder().addComponents(teamTagInput);
+
+  modal.addComponents(row1, row2);
+  await interaction.showModal(modal);
+}
+
+

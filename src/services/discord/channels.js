@@ -119,14 +119,39 @@ export class ChannelService {
   }
 
   static async sendRegistrationPanel(channel, teamCount = 0, maxTeams = 0) {
-    const embed = EmbedBuilder.createRegistrationPanel(teamCount, maxTeams);
-    const components = EmbedBuilder.createRegistrationComponents(teamCount >= maxTeams);
-    await channel.send({ embeds: [embed], components });
+    try {
+      const embed = EmbedBuilder.createRegistrationPanel(teamCount, maxTeams);
+      const components = EmbedBuilder.createRegistrationComponents(teamCount >= maxTeams);
+      
+      if (!embed) {
+        console.error('❌ Error: embed es undefined en sendRegistrationPanel');
+        return;
+      }
+      
+      const messageOptions = { embeds: [embed] };
+      if (components && components.length > 0) {
+        messageOptions.components = components;
+      }
+      
+      await channel.send(messageOptions);
+    } catch (error) {
+      console.error('❌ Error enviando panel de registro:', error);
+    }
   }
 
   static async sendTournamentAnnouncement(channel, tournament) {
-    const embed = EmbedBuilder.createTournamentAnnouncement(tournament);
-    await channel.send({ embeds: [embed] });
+    try {
+      const embed = EmbedBuilder.createTournamentAnnouncement(tournament);
+      
+      if (!embed) {
+        console.error('❌ Error: embed es undefined en sendTournamentAnnouncement');
+        return;
+      }
+      
+      await channel.send({ embeds: [embed] });
+    } catch (error) {
+      console.error('❌ Error enviando anuncio del torneo:', error);
+    }
   }
 
   static async updateRegistrationPanel(guild, channels, teamCount, maxTeams) {
@@ -156,13 +181,22 @@ export class ChannelService {
     try {
       let deletedCount = 0;
       
-      // Buscar y eliminar las categorías del torneo por nombre
+      // SOLO eliminar categorías con nombres EXACTOS del torneo (más seguro)
+      const exactTournamentCategoryNames = [
+        '▌ 𝙏𝙤𝙪𝙧𝙣𝙖𝙢𝙚𝙣𝙩 𝘾𝙤𝙣𝙩𝙧𝙤𝙡 ▐',
+        '▌ 𝙏𝙤𝙪𝙧𝙣𝙖𝙢𝙚𝙣𝙩 Register ▐',
+        '👥 EQUIPOS'
+      ];
+      
       const tournamentCategories = guild.channels.cache.filter(
         c => c.type === ChannelType.GuildCategory && 
-        (c.name === '▌ 𝙏𝙤𝙪𝙧𝙣𝙖𝙢𝙚𝙣𝙩 𝘾𝙤𝙣𝙩𝙧𝙤𝙡 ▐' || c.name === '▌ 𝙏𝙤𝙪𝙧𝙣𝙖𝙢𝙚𝙣𝙩 Register ▐')
+        exactTournamentCategoryNames.includes(c.name)
       );
       
       for (const [, category] of tournamentCategories) {
+        console.log(`🗑️ Eliminando categoría del torneo: ${category.name}`);
+        
+        // Eliminar todos los canales dentro de esta categoría
         const channelsToDelete = guild.channels.cache.filter(
           channel => channel.parentId === category.id
         );
@@ -178,6 +212,7 @@ export class ChannelService {
           }
         }
         
+        // Eliminar la categoría
         try {
           await category.delete();
           deletedCount++;
@@ -188,37 +223,7 @@ export class ChannelService {
         }
       }
       
-      // Eliminar la categoría de equipos si existe
-      const teamsCategory = guild.channels.cache.find(
-        c => c.name === '👥 EQUIPOS' && c.type === 4
-      );
-      
-      if (teamsCategory) {
-        const teamsCategoryChannels = guild.channels.cache.filter(
-          channel => channel.parentId === teamsCategory.id
-        );
-        
-        for (const [, channel] of teamsCategoryChannels) {
-          try {
-            await channel.delete();
-            deletedCount++;
-            console.log(`✅ Canal de categoría EQUIPOS eliminado: ${channel.name}`);
-            await new Promise(resolve => setTimeout(resolve, 300));
-          } catch (error) {
-            console.error(`Error eliminando canal ${channel.name}:`, error.message);
-          }
-        }
-        
-        try {
-          await teamsCategory.delete();
-          deletedCount++;
-          console.log('✅ Categoría de equipos eliminada');
-        } catch (error) {
-          console.error('Error eliminando categoría de equipos:', error.message);
-        }
-      }
-      
-      console.log(`✅ Total de canales eliminados: ${deletedCount}`);
+      console.log(`✅ Total de canales del torneo eliminados: ${deletedCount}`);
       
     } catch (error) {
       console.error('Error eliminando estructura de canales:', error);

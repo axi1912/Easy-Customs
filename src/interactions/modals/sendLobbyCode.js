@@ -38,45 +38,23 @@ export async function handleSendLobbyCode(interaction) {
       .setTimestamp()
       .setFooter({ text: `Torneo: ${tournament.name}` });
 
-    // Obtener canal de lobby alert (buscar por ID o por nombre)
-    console.log(`🔍 Buscando canal lobby-alert con ID guardado: ${tournament.channels?.lobbyAlert}`);
-    console.log(`📋 tournament.channels:`, tournament.channels);
+    // Obtener canal de lobby alert
+    console.log(`🔍 Buscando canal lobby-alert...`);
     
     let lobbyAlertChannel = null;
     
-    // Primero intentar por ID si existe
-    if (tournament.channels?.lobbyAlert) {
-      lobbyAlertChannel = interaction.guild.channels.cache.get(tournament.channels.lobbyAlert);
-      console.log(`Búsqueda por ID (${tournament.channels.lobbyAlert}): ${lobbyAlertChannel ? `✅ Encontrado: ${lobbyAlertChannel.name}` : '❌ No encontrado en cache'}`);
-      
-      if (!lobbyAlertChannel) {
-        // Mostrar todos los canales de texto disponibles para debug
-        console.log(`\n📝 Canales de texto en el servidor:`);
-        interaction.guild.channels.cache
-          .filter(ch => ch.type === 0)
-          .forEach(ch => {
-            console.log(`  - ${ch.name} (ID: ${ch.id}) ${ch.id === tournament.channels.lobbyAlert ? '👈 ESTE ES EL QUE BUSCO' : ''}`);
-          });
-      }
+    // Buscar canal que contenga "lobbyalert" o "lobby-alert" en el nombre
+    lobbyAlertChannel = interaction.guild.channels.cache.find(
+      ch => ch.type === 0 && (
+        ch.name.toLowerCase().includes('lobbyalert') || 
+        ch.name.toLowerCase().includes('lobby-alert')
+      )
+    );
+    
+    if (lobbyAlertChannel) {
+      console.log(`✅ Canal lobby-alert encontrado: ${lobbyAlertChannel.name} (ID: ${lobbyAlertChannel.id})`);
     } else {
-      console.log(`⚠️ tournament.channels.lobbyAlert está vacío o undefined`);
-    }
-    
-    // Si no se encuentra por ID, buscar por nombre en la categoría del torneo
-    if (!lobbyAlertChannel && tournament.categoryId) {
-      lobbyAlertChannel = interaction.guild.channels.cache.find(
-        ch => ch.parentId === tournament.categoryId && 
-              (ch.name === '-lobbyalert' || ch.name === 'lobbyalert' || ch.name === 'lobby-alert')
-      );
-      console.log(`Búsqueda por nombre en categoría: ${lobbyAlertChannel ? '✅ Encontrado' : '❌ No encontrado'}`);
-    }
-    
-    // Si aún no se encuentra, buscar en todo el servidor
-    if (!lobbyAlertChannel) {
-      lobbyAlertChannel = interaction.guild.channels.cache.find(
-        ch => ch.name === '-lobbyalert' || ch.name === 'lobbyalert' || ch.name === 'lobby-alert'
-      );
-      console.log(`Búsqueda global por nombre: ${lobbyAlertChannel ? '✅ Encontrado' : '❌ No encontrado'}`);
+      console.log(`❌ No se encontró canal lobby-alert`);
     }
     
     // Enviar a canal de lobby alert
@@ -84,6 +62,7 @@ export async function handleSendLobbyCode(interaction) {
     if (lobbyAlertChannel) {
       try {
         await lobbyAlertChannel.send({
+          content: '@everyone',
           embeds: [lobbyEmbed]
         });
         lobbyAlertSent = true;
@@ -91,58 +70,42 @@ export async function handleSendLobbyCode(interaction) {
       } catch (error) {
         console.error('❌ Error enviando a lobby-alert:', error.message);
       }
-    } else {
-      console.error('❌ No se encontró el canal de lobby-alert en ninguna búsqueda');
-      console.log(`📋 Canales disponibles en el servidor:`);
-      interaction.guild.channels.cache.forEach(ch => {
-        if (ch.type === 0) { // Solo canales de texto
-          console.log(`  - ${ch.name} (ID: ${ch.id}, Categoría: ${ch.parentId})`);
-        }
-      });
     }
 
     // Enviar a todos los canales de equipos
-    const teams = tournamentManager.getRegisteredTeams();
+    const teams = tournament.availableTeams || [];
     let sentCount = 0;
     let failedCount = 0;
 
     console.log(`📊 Total de equipos registrados: ${teams.length}`);
-    console.log(`📋 Información de equipos:`);
-    teams.forEach(team => {
-      console.log(`  - ${team.name}: channelId=${team.channelId || 'undefined'}`);
-    });
 
     for (const team of teams) {
       console.log(`\n🔍 Procesando equipo: ${team.name}`);
       
-      // Primero intentar con channelId si existe
       let teamChannel = null;
       
-      if (team.channelId) {
-        teamChannel = interaction.guild.channels.cache.get(team.channelId);
-        console.log(`  Búsqueda por channelId (${team.channelId}): ${teamChannel ? '✅' : '❌'}`);
+      // Buscar canal de texto del equipo usando team.channels.text
+      if (team.channels && team.channels.text) {
+        teamChannel = interaction.guild.channels.cache.get(team.channels.text);
+        console.log(`  Búsqueda por team.channels.text (${team.channels.text}): ${teamChannel ? `✅ ${teamChannel.name}` : '❌ No encontrado'}`);
       }
       
-      // Si no se encuentra por ID, buscar por nombre del equipo
+      // Si no se encuentra, buscar por nombre del equipo
       if (!teamChannel) {
-        const channelName = team.name.toLowerCase().replace(/\s+/g, '-');
-        
-        // Buscar txt-nombre o -nombre
+        const teamNameClean = team.name.replace(/\s+/g, '').toLowerCase();
         teamChannel = interaction.guild.channels.cache.find(
-          ch => ch.name === `txt-${channelName}` || ch.name === `-${channelName}`
+          ch => ch.type === 0 && (
+            ch.name.toLowerCase().includes(teamNameClean) ||
+            ch.name.toLowerCase().replace(/\s+/g, '').includes(teamNameClean)
+          )
         );
-        console.log(`  Búsqueda por nombre (txt-${channelName} o -${channelName}): ${teamChannel ? '✅' : '❌'}`);
-        
-        // Si se encuentra, actualizar el channelId del equipo
-        if (teamChannel) {
-          team.channelId = teamChannel.id;
-          console.log(`  ✅ channelId actualizado para ${team.name}: ${teamChannel.id}`);
-        }
+        console.log(`  Búsqueda por nombre (${teamNameClean}): ${teamChannel ? `✅ ${teamChannel.name}` : '❌ No encontrado'}`);
       }
       
       if (teamChannel) {
         try {
           await teamChannel.send({
+            content: team.roleId ? `📢 <@&${team.roleId}>` : '', // Mencionar el rol del equipo si existe
             embeds: [lobbyEmbed]
           });
           sentCount++;

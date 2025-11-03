@@ -8,7 +8,7 @@ import { LIMITS } from '../../utils/constants.js';
 
 export async function handleModalCreateTournament(interaction) {
   try {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: 64 }); // ephemeral
 
     // Obtener valores del modal
     const tournamentName = interaction.fields.getTextInputValue('tournament_name');
@@ -30,75 +30,64 @@ export async function handleModalCreateTournament(interaction) {
       });
     }
 
-    const participantRole = await RoleService.createParticipantRole(
-      interaction.guild,
-      tournamentName
-    );
-
-    const channels = await ChannelService.createTournamentChannels(
-      interaction.guild,
-      null,
-      participantRole.id
-    );
-
-    // Crear torneo (guardar ambos IDs de categorías)
-    const tournament = tournamentManager.createTournament({
-      name: tournamentName,
-      maxTeams,
-      teamSize,
-      format,
-      game: 'warzone',
-      createdBy: interaction.user.id,
-      categoryId: channels.category2, // Categoría de registro como principal
-      category1: channels.category1, // Categoría de control
-      category2: channels.category2, // Categoría de registro
-      channels,
-      roles: { participant: participantRole.id },
-      description
+    // Responder inmediatamente para evitar timeout
+    await interaction.editReply({
+      content: '⏳ **Creando torneo...**\n\nEsto puede tardar unos segundos mientras se configuran los canales y roles.'
     });
 
-    // Enviar confirmación
-    const embed = EmbedBuilder.createTournamentSetupSuccess(tournament);
-    await interaction.editReply({ 
-      content: `✅ **¡Torneo creado exitosamente!**\n\n` +
-        `📊 Actualizando panel de administración...`,
-      embeds: [embed] 
-    });
-
-    // Actualizar panel automáticamente
+    // Crear infraestructura en segundo plano
     try {
-      const { updatePanelAutomatically } = await import('../commands/panel.js');
-      const updated = await updatePanelAutomatically(interaction.guild);
-      
-      if (updated) {
-        await interaction.editReply({ 
-          content: `✅ **¡Torneo creado exitosamente!**\n\n` +
-            `✅ Panel de administración actualizado. Los botones están ahora habilitados.`,
-          embeds: [embed] 
-        });
-      } else {
-        await interaction.editReply({ 
-          content: `✅ **¡Torneo creado exitosamente!**\n\n` +
-            `⚠️ No se encontró el panel para actualizar. Usa /panel para crear uno nuevo.`,
-          embeds: [embed] 
-        });
+      const participantRole = await RoleService.createParticipantRole(
+        interaction.guild,
+        tournamentName
+      );
+
+      const channels = await ChannelService.createTournamentChannels(
+        interaction.guild,
+        null,
+        participantRole.id
+      );
+
+      // Crear torneo
+      const tournament = tournamentManager.createTournament({
+        name: tournamentName,
+        maxTeams,
+        teamSize,
+        format,
+        game: 'warzone',
+        createdBy: interaction.user.id,
+        categoryId: channels.category2 || channels.category1,
+        channels,
+        roles: { participant: participantRole.id }
+      });
+
+      // Enviar confirmación final
+      const embed = EmbedBuilder.createTournamentSetupSuccess(tournament);
+      await interaction.editReply({ 
+        content: `✅ **¡Torneo creado exitosamente!**\n\n` +
+          `🎮 **${tournamentName}** está listo.\n` +
+          `👥 **Equipos máximos:** ${maxTeams}\n` +
+          `🏁 **Formato:** ${format}\n\n` +
+          `💡 **Próximos pasos:**\n` +
+          `1️⃣ Los admins registran equipos desde el panel de administración\n` +
+          `2️⃣ Usa \`/registration-panel\` cuando estés listo para abrir inscripciones`,
+        embeds: [embed] 
+      });
+
+      // Anuncio público
+      if (channels.announcements) {
+        await ChannelService.sendTournamentAnnouncement(
+          interaction.guild.channels.cache.get(channels.announcements),
+          tournament
+        );
       }
-    } catch (error) {
-      console.error('Error actualizando panel:', error);
+
+    } catch (infraError) {
+      console.error('Error creando infraestructura del torneo:', infraError);
+      await interaction.editReply({
+        content: `❌ **Error al crear el torneo**\n\n${infraError.message || 'Error desconocido'}`
+      });
     }
-
-    // Enviar panel de registro con valores iniciales (0 equipos de maxTeams)
-    await ChannelService.sendRegistrationPanel(
-      interaction.guild.channels.cache.get(channels.registration),
-      0,
-      maxTeams
-    );
-
-    // Anuncio público
-    await ChannelService.sendTournamentAnnouncement(
-      interaction.guild.channels.cache.get(channels.announcements),
-      tournament
-    );
 
   } catch (error) {
     console.error('Error al crear torneo desde modal:', error);
@@ -107,10 +96,14 @@ export async function handleModalCreateTournament(interaction) {
       error.message : 
       '❌ Error al crear el torneo. Inténtalo de nuevo.';
       
-    if (interaction.deferred) {
-      await interaction.editReply({ content: errorMessage });
-    } else {
-      await interaction.reply({ content: errorMessage, ephemeral: true });
+    try {
+      if (interaction.deferred) {
+        await interaction.editReply({ content: errorMessage });
+      } else {
+        await interaction.reply({ content: errorMessage, flags: 64 });
+      }
+    } catch (replyError) {
+      console.error('Error enviando respuesta de error:', replyError);
     }
   }
 }

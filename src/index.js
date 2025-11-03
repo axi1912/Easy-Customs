@@ -111,6 +111,21 @@ client.on('interactionCreate', async interaction => {
       }
     }
 
+    // Select menus del sistema de torneos
+    else if (interaction.isStringSelectMenu()) {
+      const { customId } = interaction;
+      
+      if (customId === 'select_team_to_join') {
+        const { handleSelectTeamToJoin } = await import('./interactions/commands/public-registration.js');
+        await handleSelectTeamToJoin(interaction);
+      } else {
+        await interaction.reply({
+          content: '❌ Menú de selección no reconocido.',
+          ephemeral: true
+        });
+      }
+    }
+
     // Modales del sistema de torneos
     else if (interaction.isModalSubmit()) {
       const { customId } = interaction;
@@ -175,17 +190,17 @@ client.on('messageCreate', async message => {
     
     console.log(`📨 Mensaje recibido en: ${message.channel.name || 'DM'}`);
     
-    // Verificar si el mensaje es en un canal que esté en la categoría de EQUIPOS
-    const isTeamChannel = message.channel.parent && 
-                         message.channel.parent.name === '👥 EQUIPOS' &&
-                         message.channel.type === 0; // GuildText
+    // Verificar si el mensaje es en un canal de equipo (que empiece con "TEAM" o "team")
+    const isTeamChannel = message.channel.type === 0 && // GuildText
+                         (message.channel.name.toLowerCase().startsWith('team') || 
+                          message.channel.name.toUpperCase().startsWith('TEAM'));
     
     if (!isTeamChannel) {
-      console.log(`❌ No es un canal de equipo (debe estar en categoría "👥 EQUIPOS")`);
+      console.log(`❌ No es un canal de equipo (el nombre debe empezar con "TEAM")`);
       return;
     }
     
-    console.log(`✅ Mensaje en canal de equipo: ${message.channel.name} (Categoría: ${message.channel.parent.name})`);
+    console.log(`✅ Mensaje en canal de equipo: ${message.channel.name} (Categoría: ${message.channel.parent?.name || 'Sin categoría'})`);
     
     // Verificar si el mensaje tiene una imagen adjunta
     const hasImage = message.attachments.size > 0 && 

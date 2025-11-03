@@ -50,6 +50,58 @@ export async function handleTournamentReset(interaction) {
       // Eliminar estructura de Discord (canales y categorías)
       await ChannelService.deleteTournamentStructure(interaction.guild, tournament.categoryId);
       
+      await interaction.editReply('🗑️ Eliminando equipos y sus canales...');
+      
+      // Eliminar todas las categorías y canales de equipos
+      if (tournament.availableTeams && tournament.availableTeams.length > 0) {
+        for (const team of tournament.availableTeams) {
+          try {
+            // Primero eliminar canales individuales
+            if (team.channels) {
+              if (team.channels.text) {
+                const textChannel = interaction.guild.channels.cache.get(team.channels.text);
+                if (textChannel) {
+                  console.log(`🗑️ Eliminando canal de texto del equipo ${team.name}: ${textChannel.name}`);
+                  await textChannel.delete();
+                  await new Promise(resolve => setTimeout(resolve, 300));
+                }
+              }
+              
+              if (team.channels.voice) {
+                const voiceChannel = interaction.guild.channels.cache.get(team.channels.voice);
+                if (voiceChannel) {
+                  console.log(`🗑️ Eliminando canal de voz del equipo ${team.name}: ${voiceChannel.name}`);
+                  await voiceChannel.delete();
+                  await new Promise(resolve => setTimeout(resolve, 300));
+                }
+              }
+              
+              // Luego eliminar categoría del equipo
+              if (team.channels.category) {
+                const category = interaction.guild.channels.cache.get(team.channels.category);
+                if (category) {
+                  console.log(`🗑️ Eliminando categoría del equipo ${team.name}: ${category.name}`);
+                  await category.delete();
+                  await new Promise(resolve => setTimeout(resolve, 300));
+                }
+              }
+            }
+            
+            // Eliminar rol del equipo
+            if (team.roleId) {
+              const role = interaction.guild.roles.cache.get(team.roleId);
+              if (role) {
+                console.log(`🗑️ Eliminando rol del equipo ${team.name}: ${role.name}`);
+                await role.delete();
+                await new Promise(resolve => setTimeout(resolve, 300));
+              }
+            }
+          } catch (teamError) {
+            console.error(`Error eliminando equipo ${team.name}:`, teamError);
+          }
+        }
+      }
+      
       await interaction.editReply('🗑️ Eliminando roles del torneo...');
       
       // Eliminar roles (limpia TODOS los roles de participantes)
@@ -75,7 +127,7 @@ export async function handleTournamentReset(interaction) {
 
       const embed = EmbedBuilder.createTournamentDeleted(tournamentName);
       await interaction.editReply({ 
-        content: '✅ **Limpieza completada:**\n- Canales eliminados ✅\n- Roles eliminados ✅\n- Google Sheets limpiado ✅\n- Datos limpiados ✅',
+        content: '✅ **Limpieza completada:**\n- Canales del torneo eliminados ✅\n- Equipos y sus canales eliminados ✅\n- Roles eliminados ✅\n- Google Sheets limpiado ✅\n- Datos limpiados ✅',
         embeds: [embed] 
       });
 

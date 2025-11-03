@@ -80,34 +80,42 @@ export class RoleService {
     try {
       let deletedCount = 0;
       
-      // Eliminar el rol específico si existe
+      // Eliminar solo el rol específico del torneo si se proporciona roleId
       if (roleId) {
         const role = guild.roles.cache.get(roleId);
         if (role) {
+          console.log(`🗑️ Eliminando rol del torneo por ID: ${role.name}`);
           await role.delete();
           deletedCount++;
-          console.log(`✅ Rol eliminado: ${role.name}`);
+          console.log(`✅ Rol del torneo eliminado: ${role.name}`);
         }
       }
       
-      // Eliminar TODOS los roles que contengan "Participant", "Team" o nombres de torneos
-      const rolesToDelete = guild.roles.cache.filter(role => 
-        role.name.includes('Participant') ||
-        role.name.includes('CUSTOMS') ||
-        role.name.includes('Tournament') ||
-        role.name.toLowerCase().startsWith('team ') ||
-        role.name.toLowerCase().includes(' team') ||
-        role.name.toUpperCase().startsWith('TEAM ') // Roles como "TEAM PEPE"
-      );
+      // TAMBIÉN eliminar roles que contengan exactamente estos patrones específicos del bot
+      const safePatternsToDelete = [
+        'Participant'      // Rol de participante del torneo (ej: "hola Participant", "Tournament Participant")
+      ];
+      
+      const rolesToDelete = guild.roles.cache.filter(role => {
+        // Solo eliminar si el rol contiene EXACTAMENTE estos términos Y no es un rol del sistema
+        return !role.managed && // No eliminar roles de bots/integraciones
+               !role.tags &&    // No eliminar roles especiales
+               role.name !== '@everyone' && // Nunca tocar @everyone
+               role.id !== roleId && // No duplicar eliminación del rol por ID
+               safePatternsToDelete.some(pattern => 
+                 role.name.includes(pattern)
+               );
+      });
       
       for (const [, role] of rolesToDelete) {
         try {
+          console.log(`🗑️ Eliminando rol por patrón: ${role.name}`);
           await role.delete();
           deletedCount++;
           console.log(`✅ Rol eliminado: ${role.name}`);
           await new Promise(resolve => setTimeout(resolve, 300)); // Evitar rate limit
         } catch (error) {
-          console.error(`Error eliminando rol ${role.name}:`, error.message);
+          console.error(`❌ Error eliminando rol ${role.name}:`, error.message);
         }
       }
       

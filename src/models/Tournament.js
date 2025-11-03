@@ -34,6 +34,7 @@ export class Tournament {
     this.createdAt = new Date();
     this.bracket = null;
     this.matches = [];
+    this.availableTeams = []; // Lista de equipos pre-registrados por admins
   }
 
   // Métodos para gestionar el estado del torneo
@@ -78,7 +79,8 @@ export class Tournament {
       createdBy: this.createdBy,
       createdAt: this.createdAt.toISOString(),
       bracket: this.bracket,
-      matches: this.matches
+      matches: this.matches,
+      availableTeams: this.availableTeams
     };
   }
 
@@ -100,6 +102,7 @@ export class Tournament {
     tournament.createdAt = new Date(data.createdAt);
     tournament.bracket = data.bracket;
     tournament.matches = data.matches;
+    tournament.availableTeams = data.availableTeams || [];
     
     return tournament;
   }

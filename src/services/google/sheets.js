@@ -170,12 +170,14 @@ export class GoogleSheetsService {
             const row = [
                 new Date().toLocaleString('es-ES'),
                 teamData.name,
-                teamData.captain,
-                teamData.players.join(', '),
-                teamData.captainDiscord,
-                teamData.userId,
+                teamData.captain || 'Pendiente',
+                Array.isArray(teamData.players) ? teamData.players.join(', ') : '',
+                teamData.captainDiscord || 'Pendiente',
+                teamData.userId || '',
                 tournamentId || 'default'
             ];
+
+            console.log(`📊 Intentando registrar equipo en Google Sheets:`, row);
 
             await this.sheets.spreadsheets.values.append({
                 spreadsheetId: this.spreadsheetId,
@@ -186,14 +188,88 @@ export class GoogleSheetsService {
                 }
             });
 
-            console.log(`📊 Equipo "${teamData.name}" registrado en Google Sheets`);
+            console.log(`✅ Equipo "${teamData.name}" registrado exitosamente en Google Sheets`);
             
             // Inicializar en el Leaderboard
             await this.initializeTeamInLeaderboard(teamData.name, tournamentId);
             
             return true;
         } catch (error) {
-            console.error('Error al registrar equipo en Google Sheets:', error.message);
+            console.error('❌ Error al registrar equipo en Google Sheets:', error);
+            console.error('Detalles del error:', error.message);
+            return false;
+        }
+    }
+
+    /**
+     * Actualiza los miembros de un equipo en Google Sheets
+     */
+    async updateTeamMembers(teamName, members, captain, tournamentId) {
+        if (!this.initialized) {
+            await this.initialize();
+        }
+
+        try {
+            // Buscar el equipo en la hoja de Registros
+            const response = await this.sheets.spreadsheets.values.get({
+                spreadsheetId: this.spreadsheetId,
+                range: 'Registros!A:G'
+            });
+
+            const rows = response.data.values || [];
+            
+            // Encontrar la fila del equipo (columna B es el nombre del equipo)
+            const rowIndex = rows.findIndex(row => row[1] === teamName);
+            
+            if (rowIndex >= 0) {
+                // Actualizar la fila existente
+                const row = [
+                    rows[rowIndex][0] || new Date().toLocaleString('es-ES'), // Mantener fecha original
+                    teamName,
+                    captain,
+                    members.join(', '),
+                    captain, // Captain Discord (mismo que captain por ahora)
+                    rows[rowIndex][5] || '', // Mantener userId original
+                    tournamentId || 'default'
+                ];
+
+                await this.sheets.spreadsheets.values.update({
+                    spreadsheetId: this.spreadsheetId,
+                    range: `Registros!A${rowIndex + 1}:G${rowIndex + 1}`,
+                    valueInputOption: 'RAW',
+                    resource: {
+                        values: [row]
+                    }
+                });
+
+                console.log(`📊 Equipo "${teamName}" actualizado en Google Sheets`);
+            } else {
+                // Si no existe, crear nuevo registro
+                const row = [
+                    new Date().toLocaleString('es-ES'),
+                    teamName,
+                    captain,
+                    members.join(', '),
+                    captain,
+                    '',
+                    tournamentId || 'default'
+                ];
+
+                await this.sheets.spreadsheets.values.append({
+                    spreadsheetId: this.spreadsheetId,
+                    range: 'Registros!A:G',
+                    valueInputOption: 'RAW',
+                    resource: {
+                        values: [row]
+                    }
+                });
+
+                console.log(`📊 Equipo "${teamName}" creado en Google Sheets`);
+            }
+            
+            return true;
+        } catch (error) {
+            console.error('Error al actualizar equipo en Google Sheets:', error.message);
             return false;
         }
     }
