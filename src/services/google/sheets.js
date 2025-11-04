@@ -1,9 +1,9 @@
-import { google } from 'googleapis';
+﻿import { google } from 'googleapis';
 import { readFileSync } from 'fs';
 import path from 'path';
 
 /**
- * Servicio para manejar la integración con Google Sheets
+ * Servicio para manejar la integraciÃ³n con Google Sheets
  */
 export class GoogleSheetsService {
     constructor() {
@@ -13,19 +13,19 @@ export class GoogleSheetsService {
     }
 
     /**
-     * Inicializa la conexión con Google Sheets
+     * Inicializa la conexiÃ³n con Google Sheets
      */
     async initialize() {
         try {
-            // Establecer spreadsheetId aquí por si acaso no estaba disponible en el constructor
+            // Establecer spreadsheetId aquÃ­ por si acaso no estaba disponible en el constructor
             this.spreadsheetId = process.env.GOOGLE_SHEETS_ID;
             
             if (!this.spreadsheetId) {
-                console.log('❌ GOOGLE_SHEETS_ID no está configurado en variables de entorno');
+                console.log('âŒ GOOGLE_SHEETS_ID no estÃ¡ configurado en variables de entorno');
                 return false;
             }
             
-            // Configurar autenticación usando service account
+            // Configurar autenticaciÃ³n usando service account
             const auth = new google.auth.GoogleAuth({
                 credentials: {
                     type: "service_account",
@@ -45,10 +45,10 @@ export class GoogleSheetsService {
             await this.setupSheets();
             
             this.initialized = true;
-            console.log('✅ Google Sheets conectado exitosamente');
+            console.log('âœ… Google Sheets conectado exitosamente');
             return true;
         } catch (error) {
-            console.error('❌ Error al conectar con Google Sheets:', error.message);
+            console.error('âŒ Error al conectar con Google Sheets:', error.message);
             return false;
         }
     }
@@ -60,13 +60,13 @@ export class GoogleSheetsService {
         if (!this.sheets || !this.spreadsheetId) return;
 
         try {
-            // Obtener información del spreadsheet
+            // Obtener informaciÃ³n del spreadsheet
             const spreadsheet = await this.sheets.spreadsheets.get({
                 spreadsheetId: this.spreadsheetId,
             });
 
             const existingSheets = spreadsheet.data.sheets.map(sheet => sheet.properties.title);
-            const requiredSheets = ['Registros', 'Resultados', 'Leaderboard', 'Configuracion'];
+            const requiredSheets = ['Registros', 'Resultados', 'Leaderboard', 'Configuracion', 'HistorialJugadores', 'TOP10'];
 
             // Crear hojas que no existen
             for (const sheetName of requiredSheets) {
@@ -104,7 +104,7 @@ export class GoogleSheetsService {
                     }]
                 }
             });
-            console.log(`📊 Hoja "${title}" creada exitosamente`);
+            console.log(`ðŸ“Š Hoja "${title}" creada exitosamente`);
         } catch (error) {
             console.error(`Error al crear hoja ${title}:`, error.message);
         }
@@ -116,19 +116,19 @@ export class GoogleSheetsService {
     async setupHeaders() {
         const headers = {
             'Registros': [
-                'Fecha/Hora', 'Nombre del Equipo', 'Capitán', 'Jugadores', 
-                'Discord del Capitán', 'User ID', 'Tournament ID'
+                'Fecha/Hora', 'Nombre del Equipo', 'CapitÃ¡n', 'Jugadores', 
+                'Discord del CapitÃ¡n', 'User ID', 'Tournament ID'
             ],
             'Resultados': [
-                'Fecha/Hora', 'Nombre del Equipo', 'Posición', 'Total Kills', 
-                'Multiplicador', 'Puntuación Final', 'Tournament ID', 'Enviado por', 'User ID'
+                'Fecha/Hora', 'Nombre del Equipo', 'PosiciÃ³n', 'Total Kills', 
+                'Multiplicador', 'PuntuaciÃ³n Final', 'Tournament ID', 'Enviado por', 'User ID'
             ],
             'Leaderboard': [
-                'Posición', 'Nombre del Equipo', 'Puntos Totales', 'Total Kills', 
-                'Partidas Jugadas', 'Mejor Posición', 'Promedio Puntos'
+                'PosiciÃ³n', 'Nombre del Equipo', 'Puntos Totales', 'Total Kills', 
+                'Partidas Jugadas', 'Mejor PosiciÃ³n', 'Promedio Puntos'
             ],
             'Configuracion': [
-                'Parámetro', 'Valor', 'Descripción', 'Última actualización'
+                'ParÃ¡metro', 'Valor', 'DescripciÃ³n', 'Ãšltima actualizaciÃ³n'
             ]
         };
 
@@ -177,7 +177,7 @@ export class GoogleSheetsService {
                 tournamentId || 'default'
             ];
 
-            console.log(`📊 Intentando registrar equipo en Google Sheets:`, row);
+            console.log(`ðŸ“Š Intentando registrar equipo en Google Sheets:`, row);
 
             await this.sheets.spreadsheets.values.append({
                 spreadsheetId: this.spreadsheetId,
@@ -188,14 +188,14 @@ export class GoogleSheetsService {
                 }
             });
 
-            console.log(`✅ Equipo "${teamData.name}" registrado exitosamente en Google Sheets`);
+            console.log(`âœ… Equipo "${teamData.name}" registrado exitosamente en Google Sheets`);
             
             // Inicializar en el Leaderboard
             await this.initializeTeamInLeaderboard(teamData.name, tournamentId);
             
             return true;
         } catch (error) {
-            console.error('❌ Error al registrar equipo en Google Sheets:', error);
+            console.error('âŒ Error al registrar equipo en Google Sheets:', error);
             console.error('Detalles del error:', error.message);
             return false;
         }
@@ -242,7 +242,7 @@ export class GoogleSheetsService {
                     }
                 });
 
-                console.log(`📊 Equipo "${teamName}" actualizado en Google Sheets`);
+                console.log(`ðŸ“Š Equipo "${teamName}" actualizado en Google Sheets`);
             } else {
                 // Si no existe, crear nuevo registro
                 const row = [
@@ -264,7 +264,7 @@ export class GoogleSheetsService {
                     }
                 });
 
-                console.log(`📊 Equipo "${teamName}" creado en Google Sheets`);
+                console.log(`ðŸ“Š Equipo "${teamName}" creado en Google Sheets`);
             }
             
             return true;
@@ -275,7 +275,7 @@ export class GoogleSheetsService {
     }
 
     /**
-     * Inicializa un equipo en el Leaderboard con puntuación 0
+     * Inicializa un equipo en el Leaderboard con puntuaciÃ³n 0
      */
     async initializeTeamInLeaderboard(teamName, tournamentId = null) {
         try {
@@ -293,15 +293,15 @@ export class GoogleSheetsService {
                 return true;
             }
 
-            // Agregar nuevo equipo al final con estadísticas en 0
+            // Agregar nuevo equipo al final con estadÃ­sticas en 0
             const newPosition = currentTeams.length + 1;
             const row = [
-                newPosition,  // Posición temporal
+                newPosition,  // PosiciÃ³n temporal
                 teamName,     // Nombre del equipo
                 0,            // Puntos totales
                 0,            // Total kills
                 0,            // Partidas jugadas
-                15,           // Mejor posición (por defecto la peor)
+                15,           // Mejor posiciÃ³n (por defecto la peor)
                 0             // Promedio de puntos
             ];
 
@@ -314,7 +314,7 @@ export class GoogleSheetsService {
                 }
             });
 
-            console.log(`📊 Equipo "${teamName}" inicializado en Leaderboard`);
+            console.log(`ðŸ“Š Equipo "${teamName}" inicializado en Leaderboard`);
             return true;
         } catch (error) {
             console.error('Error al inicializar equipo en leaderboard:', error.message);
@@ -352,9 +352,18 @@ export class GoogleSheetsService {
                 }
             });
 
-            console.log(`📊 Resultado para "${resultData.teamName}" guardado en Google Sheets`);
+            console.log(`ðŸ“Š Resultado para "${resultData.teamName}" guardado en Google Sheets`);
             
-            // Actualizar leaderboard automáticamente
+            // Guardar kills individuales si estÃ¡n disponibles
+            if (resultData.players && resultData.players.length > 0) {
+                await this.savePlayerKills(resultData.teamName, resultData.players, {
+                    position: resultData.position,
+                    tournamentId: tournamentId,
+                    matchNumber: 1
+                });
+            }
+
+            // Actualizar leaderboard automÃ¡ticamente
             await this.updateLeaderboard(tournamentId);
             
             return true;
@@ -450,7 +459,7 @@ export class GoogleSheetsService {
             // Obtener todos los resultados
             const results = await this.getResults(tournamentId);
             
-            // Calcular estadísticas por equipo
+            // Calcular estadÃ­sticas por equipo
             const teamStats = {};
             
             for (const result of results) {
@@ -474,7 +483,7 @@ export class GoogleSheetsService {
                 }
             }
             
-            // Convertir a array y ordenar por puntuación total (descendente)
+            // Convertir a array y ordenar por puntuaciÃ³n total (descendente)
             const leaderboardData = Object.entries(teamStats)
                 .map(([teamName, stats]) => ({
                     teamName,
@@ -488,7 +497,7 @@ export class GoogleSheetsService {
             
             // Preparar filas para Google Sheets
             const rows = leaderboardData.map((team, index) => [
-                index + 1, // Posición
+                index + 1, // PosiciÃ³n
                 team.teamName,
                 team.totalScore,
                 team.totalKills,
@@ -515,7 +524,7 @@ export class GoogleSheetsService {
                 });
             }
             
-            console.log(`📊 Leaderboard actualizado con ${rows.length} equipos`);
+            console.log(`ðŸ“Š Leaderboard actualizado con ${rows.length} equipos`);
             return true;
         } catch (error) {
             console.error('Error al actualizar leaderboard:', error.message);
@@ -543,14 +552,14 @@ export class GoogleSheetsService {
                         range: `${sheetName}!A2:Z`
                     });
                     
-                    console.log(`🧹 Hoja "${sheetName}" limpiada`);
+                    console.log(`ðŸ§¹ Hoja "${sheetName}" limpiada`);
                     clearedSheets++;
                 } catch (error) {
                     console.error(`Error limpiando hoja ${sheetName}:`, error.message);
                 }
             }
 
-            console.log(`✅ ${clearedSheets} hojas limpiadas exitosamente`);
+            console.log(`âœ… ${clearedSheets} hojas limpiadas exitosamente`);
             return true;
         } catch (error) {
             console.error('Error al limpiar hojas del torneo:', error.message);
@@ -559,7 +568,7 @@ export class GoogleSheetsService {
     }
 
     /**
-     * Verifica el estado de la conexión
+     * Verifica el estado de la conexiÃ³n
      */
     async checkConnection() {
         if (!this.spreadsheetId) {
