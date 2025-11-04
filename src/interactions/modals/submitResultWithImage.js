@@ -2,7 +2,7 @@
 import { googleSheetsService } from '../../services/google/sheets.js';
 import { analyzeWarzoneResults } from '../../services/ai/imageAnalyzer.js';
 
-export async function handleSubmitResultWithImage(interaction) {
+export async function handleSubmitResultWithImageModal(interaction) {
     try {
         await interaction.deferReply({ ephemeral: false });
 
