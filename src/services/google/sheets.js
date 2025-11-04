@@ -116,19 +116,27 @@ export class GoogleSheetsService {
     async setupHeaders() {
         const headers = {
             'Registros': [
-                'Fecha/Hora', 'Nombre del Equipo', 'CapitÃ¡n', 'Jugadores', 
-                'Discord del CapitÃ¡n', 'User ID', 'Tournament ID'
+                'Fecha/Hora', 'Nombre del Equipo', 'Capitan', 'Jugadores',
+                'Discord del Capitan', 'User ID', 'Tournament ID'
             ],
             'Resultados': [
-                'Fecha/Hora', 'Nombre del Equipo', 'PosiciÃ³n', 'Total Kills', 
-                'Multiplicador', 'PuntuaciÃ³n Final', 'Tournament ID', 'Enviado por', 'User ID'
+                'Fecha/Hora', 'Nombre del Equipo', 'Posicion', 'Total Kills',
+                'Multiplicador', 'Puntuacion Final', 'Tournament ID', 'Enviado por', 'User ID'
             ],
             'Leaderboard': [
-                'PosiciÃ³n', 'Nombre del Equipo', 'Puntos Totales', 'Total Kills', 
-                'Partidas Jugadas', 'Mejor PosiciÃ³n', 'Promedio Puntos'
+                'Posicion', 'Nombre del Equipo', 'Puntos Totales', 'Total Kills',
+                'Partidas Jugadas', 'Mejor Posicion', 'Promedio Puntos'
             ],
             'Configuracion': [
-                'ParÃ¡metro', 'Valor', 'DescripciÃ³n', 'Ãšltima actualizaciÃ³n'
+                'Parametro', 'Valor', 'Descripcion', 'Ultima actualizacion'
+            ],
+            'HistorialJugadores': [
+                'Fecha/Hora', 'Jugador', 'Equipo', 'Kills', 'Posicion Equipo', 'Tournament ID', 'Partida #'
+            ],
+            'TOP10': [
+                'Ranking', 'Jugador', 'Total Kills', 'Partidas', 'Promedio Kills', 'Mejor Partida', 'Equipos'
+            ]
+        };
             ]
         };
 
