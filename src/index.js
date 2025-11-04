@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, Collection, REST, Routes } from 'discord.js';
+﻿import { Client, GatewayIntentBits, Collection, REST, Routes } from 'discord.js';
 import { config } from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -212,37 +212,27 @@ client.on('messageCreate', async message => {
     
     if (!hasImage) return;
     
-    // Importar dinámicamente los módulos necesarios
-    const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder: DiscordEmbed } = await import('discord.js');
-    const { TOURNAMENT_COLORS } = await import('./utils/constants.js');
+    // Analizar automaticamente con IA
+    console.log('Iniciando analisis automatico con IA...');
     
-    // Crear embed de confirmación
-    const embed = new DiscordEmbed()
-      .setTitle('📊 Imagen de Resultados Recibida')
-      .setDescription('¿Quieres registrar los resultados de esta partida?')
-      .setColor(TOURNAMENT_COLORS.info)
-      .setImage(message.attachments.first().url)
-      .addFields(
-        { name: '📝 Siguiente Paso', value: 'Haz clic en el botón "Registrar Resultados" para ingresar los datos de la partida.', inline: false }
-      )
-      .setFooter({ text: 'La imagen se guardará con los resultados' })
-      .setTimestamp();
+    const { handleSubmitResultWithImageModal } = await import('./interactions/modals/submitResultWithImage.js');
     
-    // Crear botón para abrir el formulario
-    const row = new ActionRowBuilder()
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId(`submit_result_${message.id}`)
-          .setLabel('📊 Registrar Resultados')
-          .setStyle(ButtonStyle.Success)
-          .setEmoji('📝')
-      );
-    
-    await message.reply({ 
-      embeds: [embed], 
-      components: [row]
-    });
-    
+    // Crear un objeto interaction simulado para el handler
+    const fakeInteraction = {
+      deferReply: async () => ({ id: message.id }),
+      editReply: async (options) => {
+        if (typeof options === 'string') {
+          return await message.reply(options);
+        }
+        return await message.reply(options);
+      },
+      followUp: async (options) => await message.reply(options),
+      channel: message.channel,
+      user: message.author,
+      message: message
+    };
+
+    await handleSubmitResultWithImageModal(fakeInteraction);
   } catch (error) {
     console.error('Error procesando imagen de resultados:', error);
   }
