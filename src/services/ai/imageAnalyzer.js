@@ -1,16 +1,16 @@
-﻿const { GoogleGenerativeAI } = require('@google/generative-ai');
+﻿import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 /**
- * Analiza imágenes de resultados de Warzone con IA
- * Puede recibir 1 o 2 imágenes (posición y/o kills)
+ * Analiza imagenes de resultados de Warzone con IA
+ * Puede recibir 1 o 2 imagenes (posicion y/o kills)
  */
-async function analyzeWarzoneResults(imageUrls) {
+export async function analyzeWarzoneResults(imageUrls) {
   try {
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
     
-    // Descargar imágenes
+    // Descargar imagenes
     const imageParts = [];
     for (const url of imageUrls) {
       const response = await fetch(url);
@@ -24,33 +24,33 @@ async function analyzeWarzoneResults(imageUrls) {
       });
     }
 
-    const prompt = `Analiza esta(s) captura(s) de Call of Duty Warzone y extrae la siguiente información:
+    const prompt = `Analiza esta(s) captura(s) de Call of Duty Warzone y extrae la siguiente informacion:
 
-1. **Posición del equipo** (ejemplo: 1, 2, 3... hasta 30+)
+1. **Posicion del equipo** (ejemplo: 1, 2, 3... hasta 30+)
 2. **Kills totales del equipo** (suma de todos los jugadores)
 3. **Kills individuales de cada jugador** (nombre y kills de cada uno)
 
 INSTRUCCIONES:
-- Si ves una pantalla de victoria/derrota, extrae la posición (#1, #2, etc.)
-- Si ves la pantalla de estadísticas, extrae los kills de cada jugador
-- Los nombres de jugador suelen estar junto a los números de kills
-- Si hay múltiples imágenes, combina la información
+- Si ves una pantalla de victoria/derrota, extrae la posicion (#1, #2, etc.)
+- Si ves la pantalla de estadisticas, extrae los kills de cada jugador
+- Los nombres de jugador suelen estar junto a los numeros de kills
+- Si hay multiples imagenes, combina la informacion
 
 FORMATO DE RESPUESTA (JSON estricto):
 {
-  "position": número (1-30+),
-  "totalKills": número,
+  "position": numero (1-30+),
+  "totalKills": numero,
   "players": [
-    {"name": "NombreJugador", "kills": número},
-    {"name": "NombreJugador2", "kills": número}
+    {"name": "NombreJugador", "kills": numero},
+    {"name": "NombreJugador2", "kills": numero}
   ],
   "confidence": "high" | "medium" | "low"
 }
 
 IMPORTANTE: 
 - Responde SOLO con el JSON, sin texto adicional
-- Si no estás seguro de algo, usa confidence: "low"
-- Si falta información, deja el campo en null
+- Si no estas seguro de algo, usa confidence: "low"
+- Si falta informacion, deja el campo en null
 `;
 
     const result = await model.generateContent([prompt, ...imageParts]);
@@ -66,7 +66,7 @@ IMPORTANTE:
     
     // Validar datos
     if (!data.position && !data.totalKills) {
-      throw new Error('No se pudo extraer información válida de las imágenes');
+      throw new Error('No se pudo extraer informacion valida de las imagenes');
     }
     
     return {
@@ -80,12 +80,10 @@ IMPORTANTE:
     };
     
   } catch (error) {
-    console.error('Error analizando imágenes con IA:', error);
+    console.error('Error analizando imagenes con IA:', error);
     return {
       success: false,
       error: error.message
     };
   }
 }
-
-module.exports = { analyzeWarzoneResults };
