@@ -137,8 +137,6 @@ export class GoogleSheetsService {
                 'Ranking', 'Jugador', 'Total Kills', 'Partidas', 'Promedio Kills', 'Mejor Partida', 'Equipos'
             ]
         };
-            ]
-        };
 
         for (const [sheetName, headerRow] of Object.entries(headers)) {
             try {
