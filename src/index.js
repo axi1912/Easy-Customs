@@ -192,47 +192,6 @@ client.on('error', error => {
   console.error('❌ Error del cliente Discord:', error);
 });
 
-// ===================== SISTEMA DE ENVÍO DE RESULTADOS CON IMAGEN =====================
-client.on('messageCreate', async message => {
-  try {
-    // Ignorar mensajes del bot
-    if (message.author.bot) return;
-    
-    // Verificar si el mensaje es en un canal de equipo (que empiece con "TEAM" o "team")
-    const isTeamChannel = message.channel.type === 0 && // GuildText
-                         (message.channel.name.toLowerCase().startsWith('team') || 
-                          message.channel.name.toUpperCase().startsWith('TEAM'));
-    
-    if (!isTeamChannel) return;
-    
-    // Verificar si el mensaje tiene una imagen adjunta
-    const hasImage = message.attachments.size > 0 && 
-                     message.attachments.some(att => 
-                       att.contentType && att.contentType.startsWith('image/')
-                     );
-    
-    if (!hasImage) return;
-    
-    // Agregar botón para registrar resultados manualmente
-    const { ButtonBuilder, ActionRowBuilder, ButtonStyle } = await import('discord.js');
-    
-    const submitButton = new ButtonBuilder()
-      .setCustomId(`submit_result_${message.id}`)
-      .setLabel('📊 Registrar Resultado')
-      .setStyle(ButtonStyle.Primary);
-
-    const row = new ActionRowBuilder().addComponents(submitButton);
-
-    await message.reply({
-      content: '📸 Imagen de resultados detectada!\n\nHaz clic en el botón para registrar los resultados manualmente:',
-      components: [row]
-    });
-
-  } catch (error) {
-    console.error('Error procesando imagen de resultados:', error);
-  }
-});
-
 // ===================== MANEJO DE ERRORES =====================
 
 process.on('unhandledRejection', error => {
