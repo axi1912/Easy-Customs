@@ -55,30 +55,6 @@ export async function handleSubmitResultManual(interaction) {
                     name: 'Total Kills', 
                     value: `${totalKills} kills`, 
                     inline: true 
-                },
-                { 
-                    name: '\u200B', 
-                    value: '\u200B', 
-                    inline: true 
-                },
-                {
-                    name: '\u200B',
-                    value: '**Cálculo de Puntuación**'
-                },
-                { 
-                    name: 'Puntos por Posición', 
-                    value: `+${positionScore} pts`, 
-                    inline: true 
-                },
-                { 
-                    name: 'Puntos por Kills', 
-                    value: `+${killsScore} pts (${totalKills} x 1)`, 
-                    inline: true 
-                },
-                { 
-                    name: 'Puntuación Final', 
-                    value: `**${finalScore} puntos**`, 
-                    inline: true 
                 }
             )
             .setTimestamp()
