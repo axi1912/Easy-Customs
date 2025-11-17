@@ -88,6 +88,16 @@ client.on('interactionCreate', async interaction => {
     else if (interaction.isButton()) {
       const { customId } = interaction;
       
+      // Botones de confirmación de resultados son manejados por collectors
+      // No los procesamos aquí para evitar conflictos
+      if (customId.startsWith('confirm_result_') || 
+          customId.startsWith('edit_result_') || 
+          customId.startsWith('cancel_result_')) {
+        // Estos botones son manejados por el collector en submitResultWithImage.js
+        // No hacer nada aquí, el collector lo manejará
+        return;
+      }
+      
       // Primero buscar handler exacto
       let handler = buttonHandlers[customId];
       
