@@ -198,19 +198,12 @@ client.on('messageCreate', async message => {
     // Ignorar mensajes del bot
     if (message.author.bot) return;
     
-    console.log(`📨 Mensaje recibido en: ${message.channel.name || 'DM'}`);
-    
     // Verificar si el mensaje es en un canal de equipo (que empiece con "TEAM" o "team")
     const isTeamChannel = message.channel.type === 0 && // GuildText
                          (message.channel.name.toLowerCase().startsWith('team') || 
                           message.channel.name.toUpperCase().startsWith('TEAM'));
     
-    if (!isTeamChannel) {
-      console.log(`❌ No es un canal de equipo (el nombre debe empezar con "TEAM")`);
-      return;
-    }
-    
-    console.log(`✅ Mensaje en canal de equipo: ${message.channel.name} (Categoría: ${message.channel.parent?.name || 'Sin categoría'})`);
+    if (!isTeamChannel) return;
     
     // Verificar si el mensaje tiene una imagen adjunta
     const hasImage = message.attachments.size > 0 && 
@@ -218,31 +211,23 @@ client.on('messageCreate', async message => {
                        att.contentType && att.contentType.startsWith('image/')
                      );
     
-    console.log(`📎 Adjuntos: ${message.attachments.size}, Tiene imagen: ${hasImage}`);
-    
     if (!hasImage) return;
     
-    // Analizar automaticamente con IA
-    console.log('Iniciando analisis automatico con IA...');
+    // Agregar botón para registrar resultados manualmente
+    const { ButtonBuilder, ActionRowBuilder, ButtonStyle } = await import('discord.js');
     
-    const { handleSubmitResultWithImageModal } = await import('./interactions/modals/submitResultWithImage.js');
-    
-    // Crear un objeto interaction simulado para el handler
-    const fakeInteraction = {
-      deferReply: async () => ({ id: message.id }),
-      editReply: async (options) => {
-        if (typeof options === 'string') {
-          return await message.reply(options);
-        }
-        return await message.reply(options);
-      },
-      followUp: async (options) => await message.reply(options),
-      channel: message.channel,
-      user: message.author,
-      message: message
-    };
+    const submitButton = new ButtonBuilder()
+      .setCustomId(`submit_result_${message.id}`)
+      .setLabel('📊 Registrar Resultado')
+      .setStyle(ButtonStyle.Primary);
 
-    await handleSubmitResultWithImageModal(fakeInteraction);
+    const row = new ActionRowBuilder().addComponents(submitButton);
+
+    await message.reply({
+      content: '📸 Imagen de resultados detectada!\n\nHaz clic en el botón para registrar los resultados manualmente:',
+      components: [row]
+    });
+
   } catch (error) {
     console.error('Error procesando imagen de resultados:', error);
   }

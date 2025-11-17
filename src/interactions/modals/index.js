@@ -3,7 +3,7 @@
 import { handleTournamentRegisterModal } from './teamRegister.js';
 import { handleModalCreateTournament } from './createTournament.js';
 import { handleModalSubmitResult } from './submitResult.js';
-import { handleSubmitResultWithImageModal } from './submitResultWithImage.js';
+import { handleSubmitResultManual } from './submitResultManual.js';
 import { handleSendLobbyCode } from './sendLobbyCode.js';
 import { handleModalPanelRegisterTeam } from './panelRegisterTeam.js';
 
@@ -15,6 +15,6 @@ export const modalHandlers = {
   'modal_panel_register_team': handleModalPanelRegisterTeam,
   // Dynamic handlers
   _dynamic: {
-    submit_result_with_image: handleSubmitResultWithImageModal
+    submit_result_manual: handleSubmitResultManual
   }
 };

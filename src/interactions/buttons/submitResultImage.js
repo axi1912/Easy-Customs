@@ -1,4 +1,4 @@
-// Handler para el botón de enviar resultado con imagen
+// Handler para el botón de enviar resultado manual (sin IA)
 
 import { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } from 'discord.js';
 import { tournamentManager } from '../../services/tournament/manager.js';
@@ -18,15 +18,9 @@ export async function handleSubmitResultImageButton(interaction) {
 
     // Obtener el ID del mensaje de la imagen desde el customId
     const messageId = interaction.customId.replace('submit_result_', '');
-    
-    // Obtener el mensaje original con la imagen
-    const originalMessage = await interaction.channel.messages.fetch(messageId);
-    const imageUrl = originalMessage.attachments.first()?.url || '';
 
     // Encontrar el equipo basado en el canal
-    // Usar el nombre del canal tal cual (solo normalizar espacios/guiones)
     const channelName = interaction.channel.name;
-    
     const team = tournamentManager.findTeamByChannelName(channelName);
     
     if (!team) {
@@ -36,10 +30,10 @@ export async function handleSubmitResultImageButton(interaction) {
       });
     }
 
-    // Crear modal para ingresar resultados
+    // Crear modal para ingresar resultados manualmente
     const modal = new ModalBuilder()
-      .setCustomId(`submit_result_with_image_${team.name}_${messageId}`)
-      .setTitle('📊 Registrar Resultados - ' + team.name);
+      .setCustomId(`submit_result_manual_${team.name}_${messageId}`)
+      .setTitle('📊 Registrar Resultados');
 
     // Input para nombre del equipo (pre-llenado)
     const teamNameInput = new TextInputBuilder()
